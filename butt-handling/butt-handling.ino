@@ -129,7 +129,6 @@ void setup() {
   pinMode(buttPin, INPUT_PULLUP);
   pinMode(4, OUTPUT);
   pinMode(ledPin, OUTPUT);
-  
 }
 
 
@@ -186,10 +185,7 @@ void loop() {
     // ...buttDown long enough to count as a sit start?
     if(!isSitting && buttDownTime > minimumTimeToBeginSit){
       // (re)set flags and timer(s)
-      isSitting = true;
-      sitComplete = false;
-      sitSatisfied = false;
-      sitTime = 0;
+      isSitting = true;      
       sitStartTime = currentTimeMS;
       onSitStart();
     }        
@@ -230,6 +226,7 @@ void loop() {
       
       sitComplete = false; // reset flags
       sitSatisfied = false;
+      sitTime = 0;
     }
 
   }  
