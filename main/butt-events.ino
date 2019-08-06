@@ -23,6 +23,11 @@
 
 //extern int LEDbrightness;
 
+/**
+ * FSR sensor threshold for a 'press'
+ */
+const int voltageTriggerThreshold = 8; 
+
 //
 // CUSTOM EVENTS
 //
@@ -145,7 +150,6 @@ unsigned long currentTimeMS; // used to cache current time in loop code.
 int buttPinState = LOW;          // current pin state
 int buttPinState_previous = LOW; // current pin state
 
-const int voltageTriggerThreshold = 500; // for analog
 boolean analogInputTriggered = false;
 
 unsigned long lastButtDebounceTime = 0;   // used for debouncing butt input
