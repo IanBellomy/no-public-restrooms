@@ -12,8 +12,8 @@
 
 #include <SoftwareSerial.h>
 
-#define ARDUINO_RX 5  //should connect to TX of the Serial MP3 Player module
-#define ARDUINO_TX 6  //connect to RX of the module
+//#define ARDUINO_RX 5  //should connect to TX of the Serial MP3 Player module
+//#define ARDUINO_TX 6  //connect to RX of the module
 
 SoftwareSerial mp3(ARDUINO_RX, ARDUINO_TX);
 

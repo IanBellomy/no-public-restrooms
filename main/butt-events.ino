@@ -21,12 +21,11 @@
    -Ian Bellomy
 */
 
-//extern int LEDbrightness;
-
 /**
  * FSR sensor threshold for a 'press'
  */
-const int voltageTriggerThreshold = 8; 
+const int voltageTriggerThreshold = 470; 
+const int restingFSRVoltage = 400; 
 
 //
 // CUSTOM EVENTS
@@ -45,7 +44,7 @@ bool lockInput = false;   //
 */
 
 void onSitStart() {
-  Serial.println("onSitStart");
+  Serial.println("onSitStart");  
 }
 
 /**
@@ -63,6 +62,7 @@ void onSitContinue() {
 void onSitSatisfied() {
   Serial.println("onSitSatisfied");
   sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x04); // ding
+  setColor(0xFFFFFF);
 }
 
 /**
@@ -82,6 +82,7 @@ void onSitComplete() {
   Serial.println("onSitComplete");
   lockInput = true;
   sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x05); // flush
+  fadeToColor(nextColor(),0.01);
 }
 
 /**
@@ -90,13 +91,14 @@ void onSitComplete() {
    TODO: Consider an onResponseInterrupted() handler, or set a flag to prevent response from being interrupted.
 */
 void onResponseComplete(uint8_t trackNumber) {
-  Serial.println("onResponseComplete" + String(trackNumber, DEC));
+  Serial.println("onResponseComplete:track 5? " + String(trackNumber, DEC));
   if (trackNumber == 5) { // flush track
     lockInput = false;
-  }
+    fadeToColor(0x000000,0.02);
+  }  
 }
 
-// todo: impliment; should be called only after the specific onSitComplete response is done.
+// todo: implement; should be called only after the specific onSitComplete response is done.
 void onSitCompleteResponseComplete() {
   Serial.println("onSitCompletelResponseComplete");
 }
@@ -110,6 +112,7 @@ void onSitCompleteResponseComplete() {
 void onButtDown() {
   Serial.println("onButtDown");
   sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x01); // tick-tock
+  fadeToColor(0x111111,0.5); // light up
 }
 
 /**
@@ -119,6 +122,7 @@ void onButtDown() {
 */
 void onButtUp() {
   Serial.println("onButtUp");
+  fadeToColor(0x000000,0.5); // 
 }
 
 /**
@@ -127,7 +131,7 @@ void onButtUp() {
 */
 void onButtUpBeforeSit() {
   Serial.println("onButtUpBeforeSit");
-  sendCommand(CMD_STOP_PLAY);
+  sendCommand(CMD_STOP_PLAY);  
 }
 
 /**
@@ -199,15 +203,15 @@ void buttEventProcessing() {
   // anlog input
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
-  Serial.println(fsrADC);    
+  //Serial.println(fsrADC);    
 
 
   // digital test input
   int discreetButtInput = digitalRead(buttPin);
   if(!discreetButtInput){
-      LEDbrightness = 65;
+      LEDbrightness = 45;
   }else{
-      LEDbrightness = map(fsrADC,0,1024,0,65);
+      LEDbrightness = map(fsrADC,0,voltageTriggerThreshold,0,65);
   }
   
   buttPinState  = !discreetButtInput || analogInputTriggered;
