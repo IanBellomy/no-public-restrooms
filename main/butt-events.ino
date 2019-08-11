@@ -24,8 +24,8 @@
 /**
  * FSR sensor threshold for a 'press'
  */
-const int voltageTriggerThreshold = 470; 
-const int restingFSRVoltage = 400; 
+const int voltageTriggerThreshold = 420; 
+const int restingFSRVoltage = 380; 
 
 //
 // CUSTOM EVENTS
@@ -36,6 +36,41 @@ const int restingFSRVoltage = 400;
    @type {Boolean}
 */
 bool lockInput = false;   //
+
+/**
+ * How long of no activity until triggering onIdle()
+ */
+// FIXME: idle time is hacked to do light 'breathing'
+unsigned long baseIdleTime = 1200;   // how long to wait until idle event, idle time will double each onIdle()
+unsigned long currentIdleThreshold = baseIdleTime;   // currentIdleThreshold should be doubled each time onIdle() happens.
+unsigned long lastEventTime = 0;
+unsigned long currentTimeMS = 0; // used to cache current time in loop code. 
+int idleCount = 0;
+
+/**
+ *  Called when something happens an idle event happens — when no interaction in N time....
+ */
+void onIdle() { 
+//  breath();
+//  idleCount = (idleCount+1)%10;
+//  if(idleCount==0){
+//    Serial.println("onIdle Bonus Event");
+//    sendCommand(CMD_PLAY_W_INDEX, 0x00, 5); // knock 
+//  }
+}
+
+/**
+ * Breath fade handling
+ */
+boolean breathOut = false;
+void breath(){
+  if(breathOut){
+    fadeToColor(0x555555,0.05);
+  }else{
+    fadeToColor(0x090909,0.05);
+  }
+  breathOut = !breathOut;
+}
 
 /**
    Called about 1 second after a user has sat, long enough to count as haing began sitting. see minimumTimeToBeginSit
@@ -61,7 +96,7 @@ void onSitContinue() {
 */
 void onSitSatisfied() {
   Serial.println("onSitSatisfied");
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x04); // ding
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, 2); // ding
   setColor(0xFFFFFF);
 }
 
@@ -80,28 +115,32 @@ void onSitCancel() {
 */
 void onSitComplete() {
   Serial.println("onSitComplete");
-  lockInput = true;
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x05); // flush
+  lockInput = true;  
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, 1); // flush  !! NOTE: onResponseComplete() called once this sound is done!
   fadeToColor(nextColor(),0.01);
+  setFlicker(50);  
 }
 
 /**
    This should be called after whatever onSitComplete() does is finished.
    It should be called from WITHIN the onSitComplete handler()
    TODO: Consider an onResponseInterrupted() handler, or set a flag to prevent response from being interrupted.
+   FIXME: Make this more transparent, e.g. the onResponseComplete should be passed a valure representing which response completed. e.g. onSitComplete.
 */
 void onResponseComplete(uint8_t trackNumber) {
   Serial.println("onResponseComplete:track 5? " + String(trackNumber, DEC));
-  if (trackNumber == 5) { // flush track
+  if (trackNumber == 1) { // flush track
     lockInput = false;
-    fadeToColor(0x000000,0.02);
+    lastEventTime = currentTimeMS;
+    fadeToColor(0x333333,0.04);
+    fadeFlicker(0,0.02);
   }  
 }
 
 // todo: implement; should be called only after the specific onSitComplete response is done.
-void onSitCompleteResponseComplete() {
-  Serial.println("onSitCompletelResponseComplete");
-}
+// void onSitCompleteResponseComplete() {
+//   Serial.println("onSitCompletelResponseComplete");
+// }
 
 
 /**
@@ -111,7 +150,12 @@ void onSitCompleteResponseComplete() {
 */
 void onButtDown() {
   Serial.println("onButtDown");
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, 0x01); // tick-tock
+//  if(random(0,100) > 50){
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, 3); // tick-tock  
+//  }else{
+//    sendCommand(CMD_PLAY_W_INDEX, 0x00, 4); // birds
+//  }
+  
   fadeToColor(0x111111,0.5); // light up
 }
 
@@ -148,9 +192,6 @@ void onButtContinue() {
 //
 
 
-unsigned long currentTimeMS; // used to cache current time in loop code.
-
-
 int buttPinState = LOW;          // current pin state
 int buttPinState_previous = LOW; // current pin state
 
@@ -161,7 +202,6 @@ unsigned long buttDebounceDelay = 50;     // min duration of continuous pin read
 unsigned long buttDownStartTime = 0;      // what time was the button pressed
 unsigned long buttDownTime = 0;           // how longs has the button been pressed
 
-
 bool isButtDown = false;  // whether or not the seat is in a pressed state
 bool wasButtDown = false; // whether or not the seat was in a pressed state last update
 bool isSitting = false;   // whether or not we're in a sitting state
@@ -170,10 +210,9 @@ bool sitSatisfied = false;// whether or not someone has sat long enough
 bool sitComplete = false; // whether or not someone has stood after having sat long enough
 
 unsigned long minimumTimeToBeginSit = 1000; // how long must a user's butt be down in order to qualify as the start of a sit
-unsigned long sitStartTime = 0;             // the time when the sit began
+unsigned long sitStartTime = 0;              // the time when the sit began
 unsigned long sitTime = 0;                   // how long has someone been sitting in milliseconds
 unsigned long minimumTimeToSatisfaction = 5000;  // how long must someone sit to trigger onSitSatisfied()
-
 
 
 //
@@ -203,7 +242,7 @@ void buttEventProcessing() {
   // anlog input
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
-  //Serial.println(fsrADC);    
+  Serial.println(fsrADC);    
 
 
   // digital test input
@@ -279,6 +318,7 @@ void buttEventProcessing() {
 
   // JUST stood...
   if (!isButtDown && wasButtDown) {
+    lastEventTime = currentTimeMS;
     onButtUp();
 
     // ... real early
@@ -303,15 +343,18 @@ void buttEventProcessing() {
       sitSatisfied = false;
       sitTime = 0;
     }
-
   }
 
   // for testing
   if (isSitting) {
     LEDbrightness = 255; // see light.ino    
-  } else {
-    
+  } else if( (lastEventTime + currentIdleThreshold) > currentTimeMS && !lockInput){
+//    currentIdleThreshold *= 2;
+    lastEventTime = currentTimeMS;
+    onIdle();    
   }
+
+  
 
   // update state tracking flags for next loop
   wasButtDown = isButtDown; // track for future

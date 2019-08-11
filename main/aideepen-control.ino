@@ -1,3 +1,23 @@
+/**
+ * Additional installation stuff
+ */
+
+//#define SOUND_SET_COUNT 1
+//
+//int currentSoundSetIndex = 0;
+//
+//int sitSound = 0
+//int sitSatisfiedSound = 1
+//int sitCompleteSound = 2
+//int sitCancelSound = 3
+//int idleSound = 4
+//
+//
+//void nextSet(){
+//  soundSetIndex = currentSoundSetIndex++ % SET_COUNT;
+//}
+
+
 /***********************************************************/
 // Demo for the Serial MP3 Player Catalex (YX5300 chip)
 // Hardware: Serial MP3 Player *1
@@ -219,29 +239,47 @@ void sendMP3Command(char c) {
       sendCommand(CMD_RESET);
       break;
 
+     case '0':
+       Serial.println("play 0");
+       sendCommand(CMD_PLAY_W_INDEX,0x00,0);
+       break;
+
      case '1':
        Serial.println("play 1");
-       sendCommand(CMD_PLAY_W_INDEX,0x00,0x01);
+       sendCommand(CMD_PLAY_W_INDEX,0x00,1);
        break;
        
      case '2':
        Serial.println("play 2");
-       sendCommand(CMD_PLAY_W_INDEX,0x00,0x02);
+       sendCommand(CMD_PLAY_W_INDEX,0x00,2);
        break;
 
      case '3':
        Serial.println("play 3");
-       sendCommand(CMD_PLAY_W_INDEX,0x00,0x03);
+       sendCommand(CMD_PLAY_W_INDEX,0x00,3);
        break;
 
      case '4':
        Serial.println("play 4");
-       sendCommand(CMD_PLAY_W_INDEX,0x00,0x04);
+       sendCommand(CMD_PLAY_W_INDEX,0x00,4);
        break;
 
      case '5':
        Serial.println("play 5");
-       sendCommand(CMD_PLAY_W_INDEX,0x00,0x05);
+       sendCommand(CMD_PLAY_W_INDEX,0x00,5);
+       break;
+       
+     case '6':
+       Serial.println("play 6");
+       sendCommand(CMD_PLAY_W_INDEX,0x00,6);
+       break;
+     case '7':
+       Serial.println("play 7");
+       sendCommand(CMD_PLAY_W_INDEX,0x00,7);
+       break;
+     case '8':
+       Serial.println("play 8");
+       sendCommand(CMD_PLAY_W_INDEX,0x00,8);
        break;
   }
 }

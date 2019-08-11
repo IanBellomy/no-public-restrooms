@@ -113,7 +113,20 @@ void setColor(long rgb_hex){
   targetBlue = blueValue;
 }
 
-
+/**
+ * Light Flickering
+ */
+int flickerValue = 0;
+int flickerTarget = 0;
+float flickerEase = 0.2;
+void setFlicker(int val){
+  flickerValue = val;
+  flickerTarget = val;
+}
+void fadeFlicker(int val,float ease){
+  flickerTarget = val;
+  flickerEase = ease; 
+}
  
 /**
  * Configure pins
@@ -141,7 +154,14 @@ float roundAwayFromZero(float val){
  */
 float deltaRed = 0;
 float deltaGreen = 0;
-float deltaBlue= 0;
+float deltaBlue = 0;
+float deltaFlicker = 0;
+
+byte redOut = 0;
+byte greenOut = 0;
+byte blueOut = 0;
+
+int8_t finalFlickerAdjust = 0;
 
 void lightLoop(){  
  
@@ -152,40 +172,28 @@ void lightLoop(){
   if(targetRed!=redValue){
 //    Serial.print("tr: "); Serial.print(targetRed);
 //    Serial.print(" r: "); Serial.print(redValue);
-//    Serial.print(" red dif: ");      
+//    Serial.print(" red dif: ");  
 //    Serial.println(deltaRed);
-//    Serial.print(" rounded dif: ");  
-//    Serial.println(byte(roundAwayFromZero(redValue)));    
+//    Serial.print(" rounded dif: ");
+//    Serial.println(byte(roundAwayFromZero(redValue)));  
   }
 
   redValue += byte(roundAwayFromZero(deltaRed));
   greenValue += byte(roundAwayFromZero(deltaGreen));
   blueValue += byte(roundAwayFromZero(deltaBlue));
+
+  deltaFlicker = float(flickerTarget - flickerValue) * flickerEase;
+  flickerValue += byte(roundAwayFromZero(flickerValue));
+  finalFlickerAdjust = random(-flickerValue,flickerValue);
+
+  redOut = constrain(redValue + finalFlickerAdjust,0,255);
+  greenOut = constrain(greenValue + finalFlickerAdjust,0,255);
+  blueOut = constrain(blueValue + finalFlickerAdjust,0,255);
   
   // write pin values
   analogWrite(RED_PIN, redValue);
   analogWrite(GREEN_PIN, greenValue);  
   analogWrite(BLUE_PIN, blueValue);
-
-//  Serial.print("target: ");
-//  Serial.print(targetRed);
-//  Serial.print(",");
-//  Serial.print(targetGreen);
-//  Serial.print(",");
-//  Serial.println(targetBlue);
-//
-//  
-//
-//  Serial.print("actual: ");
-//  Serial.print(redValue);
-//  Serial.print(",");
-//  Serial.print(greenValue);
-//  Serial.print(",");
-//  Serial.println(blueValue);
-
   
-
-
-  //
-  analogWrite(testLedPin, LEDbrightness);
+  
 }
