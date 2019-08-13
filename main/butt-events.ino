@@ -48,16 +48,21 @@ unsigned long currentTimeMS = 0; // used to cache current time in loop code.
 int idleCount = 0;
 
 /**
- *  Called when something happens an idle event happens — when no interaction in N time....
+ *  Called on regular intervals when no interaction in N time....
  */
 void onIdle() { 
-//  breath();
-//  idleCount = (idleCount+1)%10;
-//  if(idleCount==0){
-//    Serial.println("onIdle Bonus Event");
+  Serial.println("onIdle");
+  breath();
+  idleCount = (idleCount+1)%10;
+  if(idleCount==0){    
+    Serial.println("onIdle Bonus Event");
 //    sendCommand(CMD_PLAY_W_INDEX, 0x00, 5); // knock 
-//  }
+  }
 }
+
+//void onIdleContinue(){
+//  
+//}
 
 /**
  * Breath fade handling
@@ -222,6 +227,8 @@ unsigned long minimumTimeToSatisfaction = 5000;  // how long must someone sit to
 void buttEventsSetup() {
   pinMode(buttPin, INPUT_PULLUP);
   pinMode(FSR_PIN, INPUT);
+  lastEventTime = millis();
+  onIdle();
 }
 
 //
@@ -242,7 +249,7 @@ void buttEventProcessing() {
   // anlog input
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
-  Serial.println(fsrADC);    
+//  Serial.println(fsrADC);    
 
 
   // digital test input
@@ -344,14 +351,13 @@ void buttEventProcessing() {
       sitTime = 0;
     }
   }
-
-  // for testing
+  
   if (isSitting) {
-    LEDbrightness = 255; // see light.ino    
-  } else if( (lastEventTime + currentIdleThreshold) > currentTimeMS && !lockInput){
-//    currentIdleThreshold *= 2;
+    LEDbrightness = 255;     // for testing; see light.ino    
+  } else if( ((lastEventTime + currentIdleThreshold) <= currentTimeMS) && !lockInput){
     lastEventTime = currentTimeMS;
     onIdle();    
+    //    currentIdleThreshold *= 2; // for exponentially increasing idle calls...
   }
 
   

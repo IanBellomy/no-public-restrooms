@@ -66,14 +66,14 @@ float currentEaseValue = 0.2;
  */
 void fadeToColor(byte r, byte g, byte b,float ease){  
   currentEaseValue = ease; //((ease <= 0.0) ? 0.0001 : ease); // don't accept 0 or less.    
-  Serial.print("fade to color: ");
-  Serial.print(r);
-  Serial.print(' ');
-  Serial.print(g);
-  Serial.print(' ');
-  Serial.print(b);
-  Serial.print(" , ease: ");
-  Serial.println(ease);
+//  Serial.print("fade to color: ");
+//  Serial.print(r);
+//  Serial.print(' ');
+//  Serial.print(g);
+//  Serial.print(' ');
+//  Serial.print(b);
+//  Serial.print(" , ease: ");
+//  Serial.println(ease);
   targetRed = r;
   targetGreen = g;
   targetBlue = b;
