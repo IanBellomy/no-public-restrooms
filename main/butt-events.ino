@@ -70,9 +70,9 @@ void onIdle() {
 boolean breathOut = false;
 void breath(){
   if(breathOut){
-    fadeToColor(0x555555,0.05);
+    fadeToColor(0x555555,0.1);
   }else{
-    fadeToColor(0x090909,0.05);
+    fadeToColor(0x010101,0.1);
   }
   breathOut = !breathOut;
 }
