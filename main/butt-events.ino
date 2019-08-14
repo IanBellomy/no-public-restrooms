@@ -24,7 +24,7 @@
 /**
  * FSR sensor threshold for a 'press'
  */
-const int voltageTriggerThreshold = 420; 
+int voltageTriggerThreshold = 420; 
 int restingFSRVoltage = 380; 
 
 //
@@ -50,7 +50,7 @@ int idleCount = 0;
  *  Called on regular intervals when no interaction in N time....
  */
 void onIdle() { 
-  Serial.println("onIdle");
+//  Serial.println("onIdle");
   breath();
   idleCount = (idleCount+1)%10;
 //  if(idleCount==0){    
@@ -231,7 +231,10 @@ void buttEventsSetup() {
   pinMode(FSR_PIN, INPUT);
   lastEventTime = millis();
   restingFSRVoltage = analogRead(FSR_PIN) + 15;
+  voltageTriggerThreshold = restingFSRVoltage  + 100;
+  
   Serial.print("FSR resting voltage measured as: "); Serial.println(restingFSRVoltage);
+  Serial.print("Trigger voltage set to: "); Serial.println(voltageTriggerThreshold);
   onIdle();
 }
 
@@ -254,6 +257,9 @@ void buttEventProcessing() {
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
 //  Serial.println(fsrADC);    
+//  if(cycle%1000 == 0){
+//    Serial.print("fsr : "); Serial.println(fsrADC);
+//  }
 
 
   // digital test input

@@ -49,8 +49,8 @@ String labels = "rgbf";
 int currentValues[] = {0, 0, 0, 0};
 int startValues[] = {0, 0, 0, 0};
 int endValues[] = {0, 0, 0, 0};
-int startTimes[] = {0, 0, 0, 0};
-int endTimes[] = {0, 0, 0, 0};
+unsigned long startTimes[] = {0, 0, 0, 0};
+unsigned long endTimes[] = {0, 0, 0, 0};
 
 /**
    set the value with flag 'item' to 'val'. See 'String labels'
@@ -127,7 +127,7 @@ void lightLoop() {
     }
   }
   if(cycle%1000 == 0){
-    Serial.print(currentValues[0]); Serial.println("");
+//    Serial.print("r: ");Serial.println(currentValues[0]);
   }
 
 

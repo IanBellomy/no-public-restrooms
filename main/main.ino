@@ -27,6 +27,7 @@ void setup() {
 }
 
 void loop() { 
+  Serial.println(currentTimeMS);
   cycle++;
   currentTimeMS = millis(); 
   
