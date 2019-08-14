@@ -110,9 +110,6 @@ void lightSetup() {
 
 
 void lightLoop() {
-  cycle++;
-  // NOTE: Assuming currentTimeMS is tracked elsewhere.
-
   for (int i = 0; i < ANIMATED_VALUE_COUNT; i++) {
     if (currentTimeMS < endTimes[i]) {
       // linear interpolation

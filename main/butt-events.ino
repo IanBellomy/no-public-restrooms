@@ -256,10 +256,10 @@ void buttEventProcessing() {
   // anlog input
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
-//  Serial.println(fsrADC);    
-//  if(cycle%1000 == 0){
-//    Serial.print("fsr : "); Serial.println(fsrADC);
-//  }
+
+  if(cycle%500 == 0){ 
+    Serial.print("fsr : "); Serial.println(fsrADC);
+  }
 
 
   // digital test input
