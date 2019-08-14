@@ -25,7 +25,7 @@
  * FSR sensor threshold for a 'press'
  */
 const int voltageTriggerThreshold = 420; 
-const int restingFSRVoltage = 380; 
+int restingFSRVoltage = 380; 
 
 //
 // CUSTOM EVENTS
@@ -40,11 +40,10 @@ bool lockInput = false;   //
 /**
  * How long of no activity until triggering onIdle()
  */
-// FIXME: idle time is hacked to do light 'breathing'
-unsigned long baseIdleTime = 1200;   // how long to wait until idle event, idle time will double each onIdle()
+// FIXME: idle time is hacked to do 'light breathing'
+unsigned long baseIdleTime = 1000;   // how long to wait until idle event, idle time will double each onIdle()
 unsigned long currentIdleThreshold = baseIdleTime;   // currentIdleThreshold should be doubled each time onIdle() happens.
 unsigned long lastEventTime = 0;
-unsigned long currentTimeMS = 0; // used to cache current time in loop code. 
 int idleCount = 0;
 
 /**
@@ -54,10 +53,10 @@ void onIdle() {
   Serial.println("onIdle");
   breath();
   idleCount = (idleCount+1)%10;
-  if(idleCount==0){    
-    Serial.println("onIdle Bonus Event");
+//  if(idleCount==0){    
+//    Serial.println("onIdle Bonus Event");
 //    sendCommand(CMD_PLAY_W_INDEX, 0x00, 5); // knock 
-  }
+//  }
 }
 
 //void onIdleContinue(){
@@ -70,9 +69,11 @@ void onIdle() {
 boolean breathOut = false;
 void breath(){
   if(breathOut){
-    fadeToColor(0x555555,0.1);
+    Serial.println("to white");
+    fadeToColor(0x0f0f0f,1000);
   }else{
-    fadeToColor(0x010101,0.1);
+    Serial.println("to dark");
+    fadeToColor(0x000000,1000);
   }
   breathOut = !breathOut;
 }
@@ -122,8 +123,9 @@ void onSitComplete() {
   Serial.println("onSitComplete");
   lockInput = true;  
   sendCommand(CMD_PLAY_W_INDEX, 0x00, 1); // flush  !! NOTE: onResponseComplete() called once this sound is done!
-  fadeToColor(nextColor(),0.01);
-  setFlicker(50);  
+  fadeToColor(nextColor(),8000);
+  setVal('f',100);       // f for flicker
+  fadeVal('f',0,6000);  // f for flicker
 }
 
 /**
@@ -137,8 +139,8 @@ void onResponseComplete(uint8_t trackNumber) {
   if (trackNumber == 1) { // flush track
     lockInput = false;
     lastEventTime = currentTimeMS;
-    fadeToColor(0x333333,0.04);
-    fadeFlicker(0,0.02);
+    fadeToColor(0x333333,5000);
+//    fadeVal('f',0,1000);
   }  
 }
 
@@ -161,7 +163,7 @@ void onButtDown() {
 //    sendCommand(CMD_PLAY_W_INDEX, 0x00, 4); // birds
 //  }
   
-  fadeToColor(0x111111,0.5); // light up
+  fadeToColor(0x111111,250); // light up
 }
 
 /**
@@ -171,7 +173,7 @@ void onButtDown() {
 */
 void onButtUp() {
   Serial.println("onButtUp");
-  fadeToColor(0x000000,0.5); // 
+  fadeToColor(0x000000,250); // 
 }
 
 /**
@@ -228,6 +230,8 @@ void buttEventsSetup() {
   pinMode(buttPin, INPUT_PULLUP);
   pinMode(FSR_PIN, INPUT);
   lastEventTime = millis();
+  restingFSRVoltage = analogRead(FSR_PIN) + 15;
+  Serial.print("FSR resting voltage measured as: "); Serial.println(restingFSRVoltage);
   onIdle();
 }
 
@@ -235,12 +239,12 @@ void buttEventsSetup() {
 // Processing input and emitting buttEvents. Should be called every loop
 //
 
-void buttEventProcessing() {
+void buttEventProcessing() {  
+  
   if (lockInput) { // do nothing if the input is locked.
     return;
   }
   LEDbrightness = 0;
-  currentTimeMS = millis();
 
   //
   // read pin(s), debounce readings, set butt flag(s)

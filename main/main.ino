@@ -1,4 +1,7 @@
-// global (for testing)
+
+unsigned long currentTimeMS = 0; // used to cache current time in loop code. 
+unsigned long cycle = 0;         // e.g. frames() — the iteration of the main loop we're on.
+
 const int testLedPin = 3;   // test output (has pwm)
 int LEDbrightness = 0; // can't get this to work
 
@@ -20,11 +23,14 @@ void setup() {
   randomSeed(analogRead(0));
   buttEventsSetup();  
   aideepenSetup();
-  lightSetup();  
+  lightSetup();
 }
 
-void loop() {  
+void loop() { 
+  cycle++;
+  currentTimeMS = millis(); 
+  
   buttEventProcessing();
-  aideepenLoop();  
+//  aideepenLoop();  // used for parsing serial commands.
   lightLoop();
 }

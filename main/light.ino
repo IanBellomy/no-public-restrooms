@@ -17,8 +17,8 @@ const long YELLOW = 0xFFFF00;
 #define COLOR_COUNT 8
 
 /**
- * A list of colors EXCLUDING WHITE and NONE
- */
+   A list of colors EXCLUDING WHITE and NONE
+*/
 const long colors[COLOR_COUNT] = {
   RED,
   GREEN,
@@ -31,169 +31,115 @@ const long colors[COLOR_COUNT] = {
 };
 int selectedColor = 0;
 
-long randomColor(){
-  return colors[random(0,COLOR_COUNT)];
+long randomColor() {
+  return colors[random(0, COLOR_COUNT)];
 }
 
-long nextColor(){
+long nextColor() {
   return colors[++selectedColor % COLOR_COUNT];
 }
 
+/**
+   Used to by setVal and fadeVal to find right index
+*/
+String labels = "rgbf";
+
+#define ANIMATED_VALUE_COUNT 4
+
+int currentValues[] = {0, 0, 0, 0};
+int startValues[] = {0, 0, 0, 0};
+int endValues[] = {0, 0, 0, 0};
+int startTimes[] = {0, 0, 0, 0};
+int endTimes[] = {0, 0, 0, 0};
 
 /**
- * Each loop, we move thecolor values closer to these values.
- */
-byte targetRed   = 0;
-byte targetGreen = 0;
-byte targetBlue  = 0;
-
-/**
- * The current color values;
- */
-
-byte redValue   = 0;
-byte greenValue = 0;
-byte blueValue  = 0;
-
-/**
- * Used in tweening the color values. 
- */
-float currentEaseValue = 0.2;
-
-/**
- * Change the r,g,b color over time from whatever it's at to the target value using the supplied easing. 
- * Where 0 < easeAmount <= 1.0 , where 1 is instant, and values closer to 0 are slower. 
- */
-void fadeToColor(byte r, byte g, byte b,float ease){  
-  currentEaseValue = ease; //((ease <= 0.0) ? 0.0001 : ease); // don't accept 0 or less.    
-//  Serial.print("fade to color: ");
-//  Serial.print(r);
-//  Serial.print(' ');
-//  Serial.print(g);
-//  Serial.print(' ');
-//  Serial.print(b);
-//  Serial.print(" , ease: ");
-//  Serial.println(ease);
-  targetRed = r;
-  targetGreen = g;
-  targetBlue = b;
+   set the value with flag 'item' to 'val'. See 'String labels'
+*/
+void setVal(char item, int val) {
+  int index = labels.indexOf(item);
+  currentValues[index] = val;
+  startValues[index] = val;
+  endValues[index] = val;
+  startTimes[index] = currentTimeMS;
+  endTimes[index] = currentTimeMS;
 }
 
 /**
- * Change the hex color over time from wharever it is at to a target value using the supplied easing. 
- * Where 0 < easeAmount <= 1.0 , where 1 is instant, and values closer to 0 are slower. 
- */
-void fadeToColor(long rgb_hex, float ease){  
-  fadeToColor(
-    rgb_hex >> 16,
-    (rgb_hex & 0x00ff00) >> 8,
-    rgb_hex & 0x0000ff,
-    ease
-    );
-}
-/**
- * Set color values instantly, overriding any fades.
- * Call this before fadeToColor to jump to a color and fade to a new one.
- */
-void setColor(byte r,byte g,byte b){
-  redValue = r;
-  greenValue = g;
-  blueValue = b;
-  targetRed = r;
-  targetGreen = g;
-  targetBlue = b;
+   Animte the value with flag 'item' to 'target' over time 'durationMS'. See 'String labels'
+*/
+void fadeVal(char item, int target, int durationMS) {
+  int index = labels.indexOf(item);
+  startValues[index] = currentValues[index];
+  endValues[index] = target;
+  startTimes[index] = currentTimeMS;
+  endTimes[index] = currentTimeMS + durationMS;
+  Serial.print(item); Serial.print("; "); Serial.print(startValues[index]); Serial.print(" -> "); Serial.println(endValues[index]);
 }
 
-void setColor(long rgb_hex){
-  redValue = rgb_hex >> 16;
-  greenValue = (rgb_hex & 0x00ff00) >> 8;
-  blueValue = rgb_hex & 0x0000ff;
-  targetRed = redValue;
-  targetGreen = greenValue;
-  targetBlue = blueValue;
+
+/**
+   Change the hex color over time from wharever it is at to a target value using the supplied easing.
+   Where 0 < easeAmount <= 1.0 , where 1 is instant, and values closer to 0 are slower.
+*/
+void fadeToColor(long rgb_hex, int durationMS) {
+  fadeVal('r', rgb_hex >> 16, durationMS);
+  fadeVal('g', (rgb_hex & 0x00ff00) >> 8, durationMS);
+  fadeVal('b', rgb_hex & 0x0000ff, durationMS);
 }
 
 /**
- * Light Flickering
- */
-int flickerValue = 0;
-int flickerTarget = 0;
-float flickerEase = 0.2;
-void setFlicker(int val){
-  flickerValue = val;
-  flickerTarget = val;
+   Set color values instantly, overriding any fades.
+   Call this before fadeToColor to jump to a color and fade to a new one.
+*/
+void setColor(long rgb_hex) {
+  setVal('r', rgb_hex >> 16);
+  setVal('g', (rgb_hex & 0x00ff00) >> 8);
+  setVal('b', rgb_hex & 0x0000ff);
 }
-void fadeFlicker(int val,float ease){
-  flickerTarget = val;
-  flickerEase = ease; 
-}
- 
+
+
 /**
- * Configure pins
- */
-void lightSetup(){
-  
+   Configure pins
+*/
+void lightSetup() {
   pinMode(testLedPin, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
   pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT); 
-
-
-//   Serial.println(roundAwayFromZero(-0.3));
-//   Serial.println(roundAwayFromZero(0.3));
-//   Serial.println(roundAwayFromZero(-0.7));
-//   Serial.println(roundAwayFromZero(0.7));   
+  pinMode(BLUE_PIN, OUTPUT);
 }
 
-float roundAwayFromZero(float val){
-  return ceil(fabs(val)) * fabs(val)/val;
-}
 
-/**
- * Move the color values closer to the target values, then set the actual pin outs.
- */
-float deltaRed = 0;
-float deltaGreen = 0;
-float deltaBlue = 0;
-float deltaFlicker = 0;
+void lightLoop() {
+  cycle++;
+  // NOTE: Assuming currentTimeMS is tracked elsewhere.
 
-byte redOut = 0;
-byte greenOut = 0;
-byte blueOut = 0;
+  for (int i = 0; i < ANIMATED_VALUE_COUNT; i++) {
+    if (currentTimeMS < endTimes[i]) {
+      // linear interpolation
+      float interpolatedValue = map(
+                                  currentTimeMS,
+                                  startTimes[i], endTimes[i],
+                                  startValues[i], endValues[i]);
+      currentValues[i] = round(interpolatedValue);
 
-int8_t finalFlickerAdjust = 0;
-
-void lightLoop(){  
- 
-  deltaRed = float(targetRed - redValue) * currentEaseValue;
-  deltaGreen = float(targetGreen - greenValue) * currentEaseValue;
-  deltaBlue = float(targetBlue - blueValue) * currentEaseValue;
-
-  if(targetRed!=redValue){
-//    Serial.print("tr: "); Serial.print(targetRed);
-//    Serial.print(" r: "); Serial.print(redValue);
-//    Serial.print(" red dif: ");  
-//    Serial.println(deltaRed);
-//    Serial.print(" rounded dif: ");
-//    Serial.println(byte(roundAwayFromZero(redValue)));  
+    } else {
+      currentValues[i] = endValues[i];
+    }
+  }
+  if(cycle%1000 == 0){
+    Serial.print(currentValues[0]); Serial.println("");
   }
 
-  redValue += byte(roundAwayFromZero(deltaRed));
-  greenValue += byte(roundAwayFromZero(deltaGreen));
-  blueValue += byte(roundAwayFromZero(deltaBlue));
 
-  deltaFlicker = float(flickerTarget - flickerValue) * flickerEase;
-  flickerValue += byte(roundAwayFromZero(flickerValue));
-  finalFlickerAdjust = random(-flickerValue,flickerValue);
+  int8_t finalFlickerAdjust = int8_t(random(-currentValues[3], currentValues[3]));
 
-  redOut = constrain(redValue + finalFlickerAdjust,0,255);
-  greenOut = constrain(greenValue + finalFlickerAdjust,0,255);
-  blueOut = constrain(blueValue + finalFlickerAdjust,0,255);
-  
+  byte redOut = constrain(currentValues[0] + finalFlickerAdjust, 0, 255);
+  byte greenOut = constrain(currentValues[1] + finalFlickerAdjust, 0, 255);
+  byte blueOut = constrain(currentValues[2] + finalFlickerAdjust, 0, 255);
+
   // write pin values
-  analogWrite(RED_PIN, redValue);
-  analogWrite(GREEN_PIN, greenValue);  
-  analogWrite(BLUE_PIN, blueValue);
-  
-  
+  analogWrite(RED_PIN, redOut);
+  analogWrite(GREEN_PIN, greenOut);
+  analogWrite(BLUE_PIN, blueOut);
+
 }
