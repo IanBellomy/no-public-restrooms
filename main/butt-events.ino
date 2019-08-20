@@ -93,7 +93,9 @@ void onSitStart() {
    Called immediaetly after onButtContinue().
 */
 void onSitContinue() {
-  Serial.println("onSitContinue");
+  if(cycle%500 == 0){
+    Serial.println("onSitContinue");
+  }
 }
 
 /**
@@ -257,9 +259,9 @@ void buttEventProcessing() {
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
 
-  if(cycle%500 == 0){ 
+  //if(cycle%500 == 0){ 
     Serial.print("fsr : "); Serial.println(fsrADC);
-  }
+//  }
 
 
   // digital test input
