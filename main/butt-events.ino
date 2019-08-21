@@ -21,6 +21,12 @@
    -Ian Bellomy
 */
 
+#define FLUSH_TRACK 1
+#define DING_TRACK 2
+#define TICKING_TRACK 3
+#define BIRDS_TRACK 4
+#define KNOCK_TRACK 5
+
 /**
  * FSR sensor threshold for a 'press'
  */
@@ -55,7 +61,7 @@ void onIdle() {
   idleCount = (idleCount+1)%10;
 //  if(idleCount==0){    
 //    Serial.println("onIdle Bonus Event");
-//    sendCommand(CMD_PLAY_W_INDEX, 0x00, 5); // knock 
+//    sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
 //  }
 }
 
@@ -104,7 +110,7 @@ void onSitContinue() {
 */
 void onSitSatisfied() {
   Serial.println("onSitSatisfied");
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, 2); // ding
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, DING_TRACK); // ding
   setColor(0xFFFFFF);
 }
 
@@ -124,7 +130,7 @@ void onSitCancel() {
 void onSitComplete() {
   Serial.println("onSitComplete");
   lockInput = true;  
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, 1); // flush  !! NOTE: onResponseComplete() called once this sound is done!
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, FLUSH_TRACK); // flush  !! NOTE: onResponseComplete() called once this sound is done!
   fadeToColor(nextColor(),8000);
   setVal('f',100);       // f for flicker
   fadeVal('f',0,6000);  // f for flicker
@@ -137,12 +143,10 @@ void onSitComplete() {
    FIXME: Make this more transparent, e.g. the onResponseComplete should be passed a valure representing which response completed. e.g. onSitComplete.
 */
 void onResponseComplete(uint8_t trackNumber) {
-  Serial.println("onResponseComplete:track 5? " + String(trackNumber, DEC));
-  if (trackNumber == 1) { // flush track
+  if (trackNumber == FLUSH_TRACK) { // flush track
     lockInput = false;
     lastEventTime = currentTimeMS;
-    fadeToColor(0x333333,5000);
-//    fadeVal('f',0,1000);
+    fadeToColor(0x333333,5000);    
   }  
 }
 
@@ -160,9 +164,9 @@ void onResponseComplete(uint8_t trackNumber) {
 void onButtDown() {
   Serial.println("onButtDown");
 //  if(random(0,100) > 50){
-    sendCommand(CMD_PLAY_W_INDEX, 0x00, 3); // tick-tock  
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, TICKING_TRACK); // tick-tock  
 //  }else{
-//    sendCommand(CMD_PLAY_W_INDEX, 0x00, 4); // birds
+//    sendCommand(CMD_PLAY_W_INDEX, 0x00, BIRDS_TRACK); // birds
 //  }
   
   fadeToColor(0x111111,250); // light up
@@ -260,7 +264,7 @@ void buttEventProcessing() {
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
 
   //if(cycle%500 == 0){ 
-    Serial.print("fsr : "); Serial.println(fsrADC);
+   // Serial.print("fsr : "); Serial.println(fsrADC);
 //  }
 
 

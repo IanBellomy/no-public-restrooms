@@ -106,19 +106,21 @@ void aideepenLoop()
 {
   char c = ' ';
 
-  // If there a char on Serial call sendMP3Command to sendCommand
-  if ( Serial.available() )
-  {
-    c = Serial.read();
-    sendMP3Command(c);
+  if(cycle%100 == 0){
+    // If there a char on Serial call sendMP3Command to sendCommand
+    if ( Serial.available() )
+    {
+      c = Serial.read();
+      sendMP3Command(c);
+    }
+  
+    // Check for the answer.
+    if (mp3.available())
+    {
+      Serial.println(decodeMP3Answer());
+    }
   }
 
-  // Check for the answer.
-  if (mp3.available())
-  {
-    Serial.println(decodeMP3Answer());
-  }
-  delay(100);
 }
 
 
