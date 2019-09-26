@@ -123,9 +123,9 @@ void lightLoop() {
       currentValues[i] = endValues[i];
     }
   }
-  if(cycle%1000 == 0){
+//  if(cycle%1000 == 0){
 //    Serial.print("r: ");Serial.println(currentValues[0]);
-  }
+//  }
 
 
   int8_t finalFlickerAdjust = int8_t(random(-currentValues[3], currentValues[3]));
@@ -137,6 +137,6 @@ void lightLoop() {
   // write pin values
   analogWrite(RED_PIN, redOut);
   analogWrite(GREEN_PIN, greenOut);
-  analogWrite(BLUE_PIN, blueOut);
+  analogWrite(BLUE_PIN, blueOut);  
 
 }

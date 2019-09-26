@@ -235,6 +235,7 @@ unsigned long minimumTimeToSatisfaction = 5000;  // how long must someone sit to
 void buttEventsSetup() {
   pinMode(buttPin, INPUT_PULLUP);
   pinMode(FSR_PIN, INPUT);
+  pinMode(DIGITAL_LED_TEST_PIN,OUTPUT);
   lastEventTime = millis();
   restingFSRVoltage = analogRead(FSR_PIN) + 15;
   voltageTriggerThreshold = restingFSRVoltage  + 100;
@@ -263,9 +264,10 @@ void buttEventProcessing() {
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
 
-  //if(cycle%500 == 0){ 
-   // Serial.print("fsr : "); Serial.println(fsrADC);
+//  if(cycle%500 == 0){ 
+//    Serial.print("fsr : "); Serial.println(fsrADC);
 //  }
+//return;
 
 
   // digital test input
@@ -369,8 +371,10 @@ void buttEventProcessing() {
   }
   
   if (isSitting) {
+    digitalWrite(DIGITAL_LED_TEST_PIN,HIGH);
     LEDbrightness = 255;     // for testing; see light.ino    
   } else if( ((lastEventTime + currentIdleThreshold) <= currentTimeMS) && !lockInput){
+    digitalWrite(DIGITAL_LED_TEST_PIN,LOW);
     lastEventTime = currentTimeMS;
     onIdle();    
     //    currentIdleThreshold *= 2; // for exponentially increasing idle calls...
