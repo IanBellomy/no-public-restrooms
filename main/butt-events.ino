@@ -62,6 +62,7 @@ void onIdle() {
   if(idleCount==0){    
     Serial.println("onIdle Bonus Event");
     sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
+    fogOn();
   }
 }
 
@@ -82,6 +83,7 @@ void breath(){
     fadeToColor(0x000000,1000);
   }
   breathOut = !breathOut;
+  fogOff();
 }
 
 /**
@@ -134,6 +136,7 @@ void onSitComplete() {
   fadeToColor(nextColor(),8000);
   setVal('f',100);       // f for flicker
   fadeVal('f',0,6000);  // f for flicker
+  fogOn();
 }
 
 /**
@@ -147,6 +150,7 @@ void onResponseComplete(uint8_t trackNumber) {
     lockInput = false;
     lastEventTime = currentTimeMS;
     fadeToColor(0x333333,5000);    
+    fogOff();
   }  
 }
 

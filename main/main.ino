@@ -6,6 +6,18 @@ const int testLedPin = 3;   // test output (has pwm)
 const int DIGITAL_LED_TEST_PIN = 13;   // 
 int LEDbrightness = 0; // can't get this to work
 
+// fog
+#define FOG_PIN 7    
+boolean isFogOn = false;
+void fogOn(){
+  digitalWrite(FOG_PIN,HIGH);
+  isFogOn = true;
+}
+void fogOff(){
+  digitalWrite(FOG_PIN,LOW);
+  isFogOn = false;
+}
+
 // lights
 #define RED_PIN 9    // PWM required
 #define GREEN_PIN 10 // PWM required
