@@ -21,11 +21,11 @@
    -Ian Bellomy
 */
 
-#define FLUSH_TRACK 1
+#define FLUSH_TRACK 3
 #define DING_TRACK 2
-#define TICKING_TRACK 3
-#define BIRDS_TRACK 4
-#define KNOCK_TRACK 5
+#define TICKING_TRACK 1
+#define BIRDS_TRACK 5
+#define KNOCK_TRACK 4
 
 /**
  * FSR sensor threshold for a 'press'
@@ -59,10 +59,10 @@ void onIdle() {
 //  Serial.println("onIdle");
   breath();
   idleCount = (idleCount+1)%10;
-//  if(idleCount==0){    
-//    Serial.println("onIdle Bonus Event");
-//    sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
-//  }
+  if(idleCount==0){    
+    Serial.println("onIdle Bonus Event");
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
+  }
 }
 
 //void onIdleContinue(){
