@@ -58,7 +58,7 @@ int idleCount = 0;
 void onIdle() { 
 //  Serial.println("onIdle");
   breath();
-  idleCount = (idleCount+1)%10;
+  idleCount = (idleCount+1)%50;
   if(idleCount==0){    
     Serial.println("onIdle Bonus Event");
     sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
