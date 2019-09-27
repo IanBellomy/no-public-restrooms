@@ -21,11 +21,20 @@
    -Ian Bellomy
 */
 
-#define FLUSH_TRACK 1
-#define DING_TRACK 2
-#define TICKING_TRACK 3
-#define BIRDS_TRACK 4
-#define KNOCK_TRACK 5
+byte soundSet = 0;
+#define SOUND_SET_COUNT 5                // number of distinct sound sets
+
+#define SIT_CONTINUE_TRACK 1        // actually starts playing on butt down. 
+#define SIT_SATISFIED_TRACK 11       // plays when user has sat long enough
+#define SIT_COMPLETE_TRACK 21        // plays when user gets up after having sat long enough
+
+#define BONUS_IDLE_TRACK 31          // plays every 'currentIdleBonusInterval' iterations when idling.
+byte idleOption = 0;
+#define IDLE_OPTION_COUNT 4
+
+#define ALT_SIT_CONTINUE_TRACK 97    // variation on SIT_CONTINUE_TRACK
+#define SIT_CANCEL_TRACK 98          // plays if someone gets up when
+#define RESTART_TRACK 99             // played after sit complete track is done playing
 
 /**
  * FSR sensor threshold for a 'press'
@@ -49,20 +58,31 @@ bool lockInput = false;   //
 // FIXME: idle time is hacked to do 'light breathing'
 unsigned long baseIdleTime = 1000;   // how long to wait until idle event, idle time will double each onIdle()
 unsigned long currentIdleThreshold = baseIdleTime;   // currentIdleThreshold should be doubled each time onIdle() happens.
+unsigned int defaultIdleBonusInterval = 2;  // how many idle events pass before an bonus idle event
+unsigned int currentIdleBonusInterval = defaultIdleBonusInterval;   // how many idle events pass before an bonus idle event
 unsigned long lastEventTime = 0;
 int idleCount = 0;
 
 /**
- *  Called on regular intervals when no interaction in N time....
+ *  Called on regular intervals if there's no interaction in N time....
  */
 void onIdle() { 
 //  Serial.println("onIdle");
   breath();
-  idleCount = (idleCount+1)%10;
-//  if(idleCount==0){    
-//    Serial.println("onIdle Bonus Event");
-//    sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
-//  }
+  idleCount = (idleCount+1)%currentIdleBonusInterval;
+  if(idleCount==0){    
+    Serial.println("onIdle Bonus Event");
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, BONUS_IDLE_TRACK + idleOption);    
+    currentIdleBonusInterval*=2; 
+    fogOn(); // fog will turn off onIdleBonusTrackComplete
+//    lockInput = true; // this must be turned off in onIdleBonusTrackComplete    
+  }
+}
+
+void onIdleBonusTrackComplete(){
+  idleOption = (idleOption + 1) % IDLE_OPTION_COUNT;
+  fogOff();
+//  lockInput = false;
 }
 
 //void onIdleContinue(){
@@ -91,7 +111,8 @@ void breath(){
 */
 
 void onSitStart() {
-  Serial.println("onSitStart");  
+  // NOTE: SIT_CONTINUE_TRACK starts playing on butt down and should be running right now.
+  Serial.println("onSitStart"); 
 }
 
 /**
@@ -99,6 +120,7 @@ void onSitStart() {
    Called immediaetly after onButtContinue().
 */
 void onSitContinue() {
+  // NOTE: SIT_CONTINUE_TRACK starts playing on butt down and should be running right now.
   if(cycle%500 == 0){
     Serial.println("onSitContinue");
   }
@@ -110,8 +132,9 @@ void onSitContinue() {
 */
 void onSitSatisfied() {
   Serial.println("onSitSatisfied");
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, DING_TRACK); // ding
-  setColor(0xFFFFFF);
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_SATISFIED_TRACK + soundSet); 
+  setColor(0xFFFFFF); 
+  fogOff();
 }
 
 /**
@@ -121,6 +144,8 @@ void onSitSatisfied() {
 void onSitCancel() {
   Serial.println("onSitCancel");
   sendCommand(CMD_STOP_PLAY);
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_CANCEL_TRACK);
+  fogOff();
 }
 
 /**
@@ -130,10 +155,11 @@ void onSitCancel() {
 void onSitComplete() {
   Serial.println("onSitComplete");
   lockInput = true;  
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, FLUSH_TRACK); // flush  !! NOTE: onResponseComplete() called once this sound is done!
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_COMPLETE_TRACK + soundSet); // !! NOTE: onResponseComplete() called once this sound is done!
   fadeToColor(nextColor(),8000);
   setVal('f',100);       // f for flicker
   fadeVal('f',0,6000);  // f for flicker
+  fogOn();
 }
 
 /**
@@ -143,11 +169,16 @@ void onSitComplete() {
    FIXME: Make this more transparent, e.g. the onResponseComplete should be passed a valure representing which response completed. e.g. onSitComplete.
 */
 void onResponseComplete(uint8_t trackNumber) {
-  if (trackNumber == FLUSH_TRACK) { // flush track
+  if (trackNumber == SIT_COMPLETE_TRACK + soundSet) { // flush track
     lockInput = false;
     lastEventTime = currentTimeMS;
     fadeToColor(0x333333,5000);    
-  }  
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, RESTART_TRACK);
+    soundSet = (soundSet + 1) % SOUND_SET_COUNT; 
+    fogOff();
+  }else if(trackNumber == BONUS_IDLE_TRACK + idleOption){
+    onIdleBonusTrackComplete();
+  }
 }
 
 // todo: implement; should be called only after the specific onSitComplete response is done.
@@ -161,12 +192,13 @@ void onResponseComplete(uint8_t trackNumber) {
    Probably want to use onSitStart instead of this event.
    TODO: Consider throttling this so it can't be called multiple times very quickly by someone tapping on the seat.
 */
-void onButtDown() {
+void onButtDown() {  
   Serial.println("onButtDown");
+  fogOff(); // just in case...
 //  if(random(0,100) > 50){
-    sendCommand(CMD_PLAY_W_INDEX, 0x00, TICKING_TRACK); // tick-tock  
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_CONTINUE_TRACK +  soundSet); 
 //  }else{
-//    sendCommand(CMD_PLAY_W_INDEX, 0x00, BIRDS_TRACK); // birds
+//    sendCommand(CMD_PLAY_W_INDEX, 0x00, ALT_SIT_CONTINUE_TRACK);
 //  }
   
   fadeToColor(0x111111,250); // light up
@@ -307,7 +339,8 @@ void buttEventProcessing() {
   if (isButtDown && !wasButtDown) {
     buttDownStartTime = currentTimeMS;
     buttDownTime = 0;
-    onButtDown();
+    onButtDown();    
+    currentIdleBonusInterval = defaultIdleBonusInterval;
   }
 
   // Continues to have butt down...
@@ -373,11 +406,10 @@ void buttEventProcessing() {
   if (isSitting) {
     digitalWrite(DIGITAL_LED_TEST_PIN,HIGH);
     LEDbrightness = 255;     // for testing; see light.ino    
-  } else if( ((lastEventTime + currentIdleThreshold) <= currentTimeMS) && !lockInput){
+  } else if( ((lastEventTime + baseIdleTime) <= currentTimeMS) && !lockInput){
     digitalWrite(DIGITAL_LED_TEST_PIN,LOW);
     lastEventTime = currentTimeMS;
-    onIdle();    
-    //    currentIdleThreshold *= 2; // for exponentially increasing idle calls...
+    onIdle();        
   }
 
   
