@@ -21,17 +21,18 @@
    -Ian Bellomy
 */
 
-#define FLUSH_TRACK 3
-#define DING_TRACK 2
 #define TICKING_TRACK 1
-#define BIRDS_TRACK 5
+#define DING_TRACK 2
+#define FLUSH_TRACK 3
 #define KNOCK_TRACK 4
+#define BIRDS_TRACK 5
+
 
 /**
  * FSR sensor threshold for a 'press'
  */
-int voltageTriggerThreshold = 420; 
-int restingFSRVoltage = 380; 
+int voltageTriggerThreshold = 0; // set on setup
+int restingFSRVoltage = 0;  // set on setup
 
 //
 // CUSTOM EVENTS
@@ -58,7 +59,7 @@ int idleCount = 0;
 void onIdle() { 
 //  Serial.println("onIdle");
   breath();
-  idleCount = (idleCount+1)%50;
+  idleCount = (idleCount+1)%10;
   if(idleCount==0){    
     Serial.println("onIdle Bonus Event");
     sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
@@ -268,9 +269,9 @@ void buttEventProcessing() {
   int fsrADC = analogRead(FSR_PIN);
   analogInputTriggered = (fsrADC > voltageTriggerThreshold);
 
-//  if(cycle%500 == 0){ 
-//    Serial.print("fsr : "); Serial.println(fsrADC);
-//  }
+  if(cycle%500 == 0){ 
+    Serial.print("fsr : "); Serial.println(fsrADC);
+  }
 //return;
 
 

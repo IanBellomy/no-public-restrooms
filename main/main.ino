@@ -28,10 +28,21 @@ void fogOff(){
 #define FSR_PIN A0  // input for analog FSR / pressure sensor
 
 // aideepen-control
-#define ARDUINO_RX 5  // PWM required; should connect to TX of the Serial MP3 Player module
-#define ARDUINO_TX 6  // PWM required; connect to RX of the module
+// CHANGED - see below
+//#define ARDUINO_RX 5  // PWM required; should connect to TX of the Serial MP3 Player module
+//#define ARDUINO_TX 6  // PWM required; connect to RX of the module
+
+// ALT AIDEEPEN
+#define ARDUINO_RX 6  // PWM required; should connect to TX of the Serial MP3 Player module
+#define ARDUINO_TX 5  // PWM required; connect to RX of the module
 
 void setup() {  
+  //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
+  TCCR1B = TCCR1B & B11111000 | B00000001;    // set timer 1 divisor to     1 for PWM frequency of 31372.55 Hz
+
+  //---------------------------------------------- Set PWM frequency for D3 & D11 ------------------------------
+  TCCR2B = TCCR2B & B11111000 | B00000001;    // set timer 2 divisor to     1 for PWM frequency of 31372.55 Hz
+
   Serial.begin(9600);
   randomSeed(analogRead(0));
   buttEventsSetup();  
