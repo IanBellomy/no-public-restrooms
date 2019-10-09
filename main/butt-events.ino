@@ -86,8 +86,7 @@ int idleCount = 0;
  *  Called on regular intervals when no interaction in N time....
  */
 void onIdle() { 
-//  Serial.println("onIdle");
-  fogOn();
+//  Serial.println("onIdle");  
   breath();
   idleCount = (idleCount+1)%20;
   if(idleCount==0){

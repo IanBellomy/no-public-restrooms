@@ -47,6 +47,7 @@ void setup() {
 
   Serial.begin(9600);
   randomSeed(analogRead(0));
+  pinMode(FOG_PIN, OUTPUT);
   buttEventsSetup();  
   aideepenSetup();
   lightSetup();
