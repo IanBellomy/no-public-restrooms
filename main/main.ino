@@ -10,10 +10,12 @@ int LEDbrightness = 0; // can't get this to work
 #define FOG_PIN 7    
 boolean isFogOn = false;
 void fogOn(){
+  Serial.println("FOG ON");
   digitalWrite(FOG_PIN,HIGH);
   isFogOn = true;
 }
 void fogOff(){
+  Serial.println("FOG OFF");
   digitalWrite(FOG_PIN,LOW);
   isFogOn = false;
 }

@@ -21,11 +21,40 @@
    -Ian Bellomy
 */
 
-#define TICKING_TRACK 1
-#define DING_TRACK 2
-#define FLUSH_TRACK 3
-#define KNOCK_TRACK 4
+#define SITTING_TRACK 1
+#define SIT_SATISFIED_TRACK 2
+#define SIT_COMPLETE_TRACK 3
+#define IDLE_TRACK 4
 #define BIRDS_TRACK 5
+
+
+//
+// BUTT EVENTS VARIABLES
+//
+
+
+int buttPinState = LOW;          // current pin state
+int buttPinState_previous = LOW; // current pin state
+
+boolean analogInputTriggered = false;
+
+unsigned long lastButtDebounceTime = 0;   // used for debouncing butt input
+unsigned long buttDebounceDelay = 50;     // min duration of continuous pin reading needed to trigger state change
+unsigned long buttDownStartTime = 0;      // what time was the button pressed
+unsigned long buttDownTime = 0;           // how longs has the button been pressed
+
+bool isButtDown = false;  // whether or not the seat is in a pressed state
+bool wasButtDown = false; // whether or not the seat was in a pressed state last update
+bool isSitting = false;   // whether or not we're in a sitting state
+bool wasSitting = false;  // whether or not we're in a sitting state last update
+bool sitSatisfied = false;// whether or not someone has sat long enough
+bool sitComplete = false; // whether or not someone has stood after having sat long enough
+
+unsigned long minimumTimeToBeginSit = 1000; // how long must a user's butt be down in order to qualify as the start of a sit
+unsigned long sitStartTime = 0;              // the time when the sit began
+unsigned long sitTime = 0;                   // how long has someone been sitting in milliseconds
+unsigned long minimumTimeToSatisfaction = 5000;  // how long must someone sit to trigger onSitSatisfied()
+
 
 
 /**
@@ -58,11 +87,12 @@ int idleCount = 0;
  */
 void onIdle() { 
 //  Serial.println("onIdle");
+  fogOn();
   breath();
-  idleCount = (idleCount+1)%10;
-  if(idleCount==0){    
+  idleCount = (idleCount+1)%20;
+  if(idleCount==0){
     Serial.println("onIdle Bonus Event");
-    sendCommand(CMD_PLAY_W_INDEX, 0x00, KNOCK_TRACK); // knock 
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, IDLE_TRACK); // knock 
     fogOn();
   }
 }
@@ -84,7 +114,7 @@ void breath(){
     fadeToColor(0x000000,1000);
   }
   breathOut = !breathOut;
-  fogOff();
+//  fogOff(); moved to onResponseComplete
 }
 
 /**
@@ -95,6 +125,7 @@ void breath(){
 
 void onSitStart() {
   Serial.println("onSitStart");  
+  fogOff();
 }
 
 /**
@@ -113,8 +144,9 @@ void onSitContinue() {
 */
 void onSitSatisfied() {
   Serial.println("onSitSatisfied");
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, DING_TRACK); // ding
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_SATISFIED_TRACK); // ding
   setColor(0xFFFFFF);
+  fogOn();
 }
 
 /**
@@ -133,26 +165,34 @@ void onSitCancel() {
 void onSitComplete() {
   Serial.println("onSitComplete");
   lockInput = true;  
-  sendCommand(CMD_PLAY_W_INDEX, 0x00, FLUSH_TRACK); // flush  !! NOTE: onResponseComplete() called once this sound is done!
+  sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_COMPLETE_TRACK); // flush  !! NOTE: onResponseComplete() called once this sound is done!
   fadeToColor(nextColor(),8000);
   setVal('f',100);       // f for flicker
   fadeVal('f',0,6000);  // f for flicker
-  fogOn();
+//  fogOn();
 }
 
 /**
-   This should be called after whatever onSitComplete() does is finished.
-   It should be called from WITHIN the onSitComplete handler()
-   TODO: Consider an onResponseInterrupted() handler, or set a flag to prevent response from being interrupted.
-   FIXME: Make this more transparent, e.g. the onResponseComplete should be passed a valure representing which response completed. e.g. onSitComplete.
+   This is called whenever a sound is complete. 
+   Based on the track number, a sit event may be triggered.   
 */
 void onResponseComplete(uint8_t trackNumber) {
-  if (trackNumber == FLUSH_TRACK) { // flush track
+  if (trackNumber == SIT_COMPLETE_TRACK) { // flush track
     lockInput = false;
     lastEventTime = currentTimeMS;
     fadeToColor(0x333333,5000);    
     fogOff();
+  }
+  if(trackNumber == IDLE_TRACK){  
+    fogOff();
   }  
+  if(trackNumber == SITTING_TRACK){    
+    sitSatisfied = true; 
+    onSitSatisfied();
+  }
+  if(trackNumber == SIT_SATISFIED_TRACK){
+    fogOff();
+  }
 }
 
 // todo: implement; should be called only after the specific onSitComplete response is done.
@@ -169,7 +209,7 @@ void onResponseComplete(uint8_t trackNumber) {
 void onButtDown() {
   Serial.println("onButtDown");
 //  if(random(0,100) > 50){
-    sendCommand(CMD_PLAY_W_INDEX, 0x00, TICKING_TRACK); // tick-tock  
+    sendCommand(CMD_PLAY_W_INDEX, 0x00, SITTING_TRACK); // tick-tock  
 //  }else{
 //    sendCommand(CMD_PLAY_W_INDEX, 0x00, BIRDS_TRACK); // birds
 //  }
@@ -185,6 +225,7 @@ void onButtDown() {
 void onButtUp() {
   Serial.println("onButtUp");
   fadeToColor(0x000000,250); // 
+  fogOff();
 }
 
 /**
@@ -204,33 +245,6 @@ void onButtContinue() {
   //Serial.println("onButtContinue..."); // Too noisy. It works though.
 }
 
-
-//
-// BUTT EVENTS VARIABLES
-//
-
-
-int buttPinState = LOW;          // current pin state
-int buttPinState_previous = LOW; // current pin state
-
-boolean analogInputTriggered = false;
-
-unsigned long lastButtDebounceTime = 0;   // used for debouncing butt input
-unsigned long buttDebounceDelay = 50;     // min duration of continuous pin reading needed to trigger state change
-unsigned long buttDownStartTime = 0;      // what time was the button pressed
-unsigned long buttDownTime = 0;           // how longs has the button been pressed
-
-bool isButtDown = false;  // whether or not the seat is in a pressed state
-bool wasButtDown = false; // whether or not the seat was in a pressed state last update
-bool isSitting = false;   // whether or not we're in a sitting state
-bool wasSitting = false;  // whether or not we're in a sitting state last update
-bool sitSatisfied = false;// whether or not someone has sat long enough
-bool sitComplete = false; // whether or not someone has stood after having sat long enough
-
-unsigned long minimumTimeToBeginSit = 1000; // how long must a user's butt be down in order to qualify as the start of a sit
-unsigned long sitStartTime = 0;              // the time when the sit began
-unsigned long sitTime = 0;                   // how long has someone been sitting in milliseconds
-unsigned long minimumTimeToSatisfaction = 5000;  // how long must someone sit to trigger onSitSatisfied()
 
 
 //
@@ -338,11 +352,12 @@ void buttEventProcessing() {
     // TODO: continues to sit for some time AFTER sitSatisfied...
     // ...
 
+  
     // ... sat long enough for satisfaction
-    if (sitTime >= minimumTimeToSatisfaction && !sitSatisfied) {
-      sitSatisfied = true;
-      onSitSatisfied();
-    }
+//    if (sitTime >= minimumTimeToSatisfaction && !sitSatisfied) {
+//      sitSatisfied = true;
+//      onSitSatisfied();
+//    }
 
   }
 
@@ -378,10 +393,10 @@ void buttEventProcessing() {
   if (isSitting) {
     digitalWrite(DIGITAL_LED_TEST_PIN,HIGH);
     LEDbrightness = 255;     // for testing; see light.ino    
-  } else if( ((lastEventTime + currentIdleThreshold) <= currentTimeMS) && !lockInput){
+  } else if( ((lastEventTime + currentIdleThreshold) <= currentTimeMS) && !lockInput && !isButtDown){
     digitalWrite(DIGITAL_LED_TEST_PIN,LOW);
     lastEventTime = currentTimeMS;
-    onIdle();    
+    onIdle();
     //    currentIdleThreshold *= 2; // for exponentially increasing idle calls...
   }
 
