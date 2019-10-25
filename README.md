@@ -1,4 +1,4 @@
 # No Public Restrooms 
 
-Working folder for code-related materials.
+Working folder for BLINK installation code. 
 
