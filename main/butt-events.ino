@@ -121,7 +121,7 @@ void breath(){
    There's a brief dealy to avoid fast repeat lid smacks from triggering this event.
    For a more immediate response see onButtDown()
 */
-
+ 
 void onSitStart() {
   Serial.println("onSitStart");  
   fogOff();
@@ -155,6 +155,7 @@ void onSitSatisfied() {
 void onSitCancel() {
   Serial.println("onSitCancel");
   sendCommand(CMD_STOP_PLAY);
+  fogOff();
 }
 
 /**
@@ -163,7 +164,7 @@ void onSitCancel() {
 */
 void onSitComplete() {
   Serial.println("onSitComplete");
-  lockInput = true;  
+  lockInput = true;
   sendCommand(CMD_PLAY_W_INDEX, 0x00, SIT_COMPLETE_TRACK); // flush  !! NOTE: onResponseComplete() called once this sound is done!
   fadeToColor(nextColor(),8000);
   setVal('f',100);       // f for flicker
@@ -179,13 +180,24 @@ void onResponseComplete(uint8_t trackNumber) {
   if (trackNumber == SIT_COMPLETE_TRACK) { // flush track
     lockInput = false;
     lastEventTime = currentTimeMS;
-    fadeToColor(0x333333,5000);    
+    fadeToColor(0x333333,5000);
     fogOff();
   }
   if(trackNumber == IDLE_TRACK){  
     fogOff();
   }  
-  if(trackNumber == SITTING_TRACK){    
+  if(trackNumber == SITTING_TRACK){     
+    // something with serial communication can result in this being called if user stands exactly when the sitting sound completes, interrupting the onSitComplete    
+    if(!isSitting){ 
+      Serial.println("!!: onResponseComplete: SITTING_TRACK : isSitting is FALSE (The user stood)");
+      return;
+    }
+    // also, something is leads to the same buffered serial response from the player to be read twice in two consecuative cycles.  
+    if(sitSatisfied){
+      Serial.println("!!: onResponseComplete: SITTING_TRACK : sitSatisfied is already TRUE");
+      return;
+    }
+    
     sitSatisfied = true; 
     onSitSatisfied();
   }
@@ -285,8 +297,6 @@ void buttEventProcessing() {
   if(cycle%500 == 0){ 
     Serial.print("fsr : "); Serial.println(fsrADC);
   }
-//return;
-
 
   // digital test input
   int discreetButtInput = digitalRead(buttPin);
@@ -351,7 +361,8 @@ void buttEventProcessing() {
     // TODO: continues to sit for some time AFTER sitSatisfied...
     // ...
 
-  
+
+    // [ onResponseComplete handles calling onSitSatisfied ]
     // ... sat long enough for satisfaction
 //    if (sitTime >= minimumTimeToSatisfaction && !sitSatisfied) {
 //      sitSatisfied = true;
@@ -399,7 +410,6 @@ void buttEventProcessing() {
     //    currentIdleThreshold *= 2; // for exponentially increasing idle calls...
   }
 
-  
 
   // update state tracking flags for next loop
   wasButtDown = isButtDown; // track for future

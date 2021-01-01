@@ -58,6 +58,6 @@ void loop() {
   currentTimeMS = millis(); 
   
   buttEventProcessing();
-  aideepenLoop();  // used for parsing serial commands.
+  aideepenLoop();  // used for parsing serial commands and responses
   lightLoop();
 }

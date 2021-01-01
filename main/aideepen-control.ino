@@ -356,7 +356,8 @@ void sendCommand(byte command){
 }
 
 void sendCommand(byte command, byte dat1, byte dat2){
-  delay(20);
+  delay(20); // <- ?!
+  
   Send_buf[0] = 0x7E;    //
   Send_buf[1] = 0xFF;    //
   Send_buf[2] = 0x06;    // Len
